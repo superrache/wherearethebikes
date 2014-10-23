@@ -5,12 +5,12 @@ xmlns:web="http://java.sun.com/xml/ns/javaee/web-app_2_5.xsd"
 xsi:schemaLocation="http://java.sun.com/xml/ns/javaee
 http://java.sun.com/xml/ns/javaee/web-app_2_5.xsd" version="2.5">
 	<servlet>
-		<servlet-name>Wherearethebikes</servlet-name>
-		<servlet-class>wherearethebikes.WherearethebikesServlet</servlet-class>
+		<servlet-name>Data</servlet-name>
+		<servlet-class>wherearethebikes.DataServlet</servlet-class>
 	</servlet>
 	<servlet-mapping>
-		<servlet-name>Wherearethebikes</servlet-name>
-		<url-pattern>/wherearethebikes</url-pattern>
+		<servlet-name>Data</servlet-name>
+		<url-pattern>/data</url-pattern>
 	</servlet-mapping>
 	<welcome-file-list>
 		<welcome-file>index.html</welcome-file>
