@@ -1,5 +1,6 @@
 body {
 	margin:0px;
+	font-family:Tahoma,Helvetica, sans-serif;
 }
 
 #map {
@@ -7,8 +8,12 @@ body {
 	height:100%;
 }
 
-#cityselector {
+#div_cityselector {
 	position:absolute;
 	top:10px;
 	left:50px;
+	padding:5px;
+	background-color: rgba(128, 128, 128, 0.5);
+	font-size:1em;
+	font-weight:bold;
 }

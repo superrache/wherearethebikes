@@ -14,10 +14,19 @@ map._initPathRoot();
 var svg = d3.select("#map").select("svg"),
 	stationAreaGroup = svg.append("g"),
 	stationPointGroup = svg.append("g"),
+	stationAreas = [],
+	stationPoints = [],
+	currentStations = [],
 	citySelector = d3.select("#cityselector").on("change", onCityChange),
 	cityOptions = [];
 
+var cityParam = getURLParameter("city");
+
+map.on("viewreset", onMapUpdate);
+
 d3.json("data?q=networks", function(networks) {
+	console.log("networks loaded");
+	
 	cityOptions = citySelector.selectAll("option")
 	  .data(networks)
 	  .enter()
@@ -38,15 +47,24 @@ function getURLParameter(name) {
 
 function onCityChange() {
 	var selectedIndex = citySelector.property('selectedIndex');
+	if(selectedIndex === "default") {
+		return;
+	}
     var city = cityOptions[0][selectedIndex].__data__;
     
 	d3.json("data?q=" + city.tag, function(stations) {
+		console.log(city.name + " station data loaded");
 		
 		stations.forEach(function(d) {
 			d.LatLng = new L.LatLng(d.lat / 1000000, d.lng / 1000000);
 		});
 		
-		var stationPoints = stationPointGroup.selectAll("circle")
+		// clear the svg
+		stationPointGroup.selectAll("circle").remove();
+		stationAreaGroup.selectAll("polygon").remove();
+		
+		// create station circles
+		stationPoints = stationPointGroup.selectAll("circle")
 			.data(stations)
 			.enter().append("circle")
 			.style("stroke", "black")
@@ -61,7 +79,8 @@ function onCityChange() {
 								.range(["red", "yellow", "green"])
 								.domain([0, 0.5, 1]);
 		
-		var stationAreas = stationAreaGroup.selectAll("path")
+		// create station polygons
+		stationAreas = stationAreaGroup.selectAll("path")
 			.data(stations)
 			.enter().append("svg:polygon")
 			.attr("id", function(d) {
@@ -76,56 +95,61 @@ function onCityChange() {
 					return colorScale(bikeAvailability);
 				});
 		
-		map.on("viewreset", update);
-		update();
-		
-		function update() {
-			// Data reprojection
-			stations.forEach(function(d, i) {
-					var stationPoint = map.latLngToLayerPoint(d.LatLng);
-					d.x = stationPoint.x;
-					d.y = stationPoint.y;
-				});
-			
-			//var pixelBounds = map.getPixelBounds();
-			
-			// Voronoi computation, clipped by the new map frame
-			var voronoi = d3.geom.voronoi()
-			.x(function(d) {
-					return d.x; 
-				})
-			.y(function(d) { 
-					return d.y; 
-				});
-			//.clipExtent([[pixelBounds.min.x, pixelBounds.min.y], [pixelBounds.max.x, pixelBounds.max.y]]);
-		
-			voronoi(stations).forEach(function(d) { 
-					d.point.cell = d;
-				});
-		
-			stationPoints.attr("transform", function(d) { 
-				return "translate("+ d.x +","+ d.y +")";
-				}
-			);
-			
-			stationAreas.attr("points", function(d) {
-				var polygon = "";
-				var first = true;
-				for(var i = 0; i < d.cell.length; i++) {
-					if(isNaN(d.cell[i][0]) || isNaN(d.cell[i][1])) return "";
-					
-					if(first) {
-						first = false;
-					} else {
-						polygon += " ";
-					}
-					
-					polygon += d.cell[i][0] + "," + d.cell[i][1];
-				}
-				return polygon;
-			});
+		// apply changes on the map
+		currentStations = stations;
+	    console.log("zooming on " + city.City);
+	    var cityLatLng = new L.LatLng(city.lat / 1000000, city.lng / 1000000);
+	    map.setView(cityLatLng, 12); // call onMapUpdate()
+	});
 
+}
+
+function onMapUpdate() {
+	console.log("onMapUpdate");
+	
+	// Data reprojection
+	currentStations.forEach(function(d, i) {
+			var stationPoint = map.latLngToLayerPoint(d.LatLng);
+			d.x = stationPoint.x;
+			d.y = stationPoint.y;
+		});
+	
+	//var pixelBounds = map.getPixelBounds();
+	
+	// Voronoi computation, clipped by the new map frame
+	var voronoi = d3.geom.voronoi()
+	.x(function(d) {
+			return d.x; 
+		})
+	.y(function(d) { 
+			return d.y; 
+		});
+	//.clipExtent([[pixelBounds.min.x, pixelBounds.min.y], [pixelBounds.max.x, pixelBounds.max.y]]);
+
+	voronoi(currentStations).forEach(function(d) { 
+			d.point.cell = d;
+		});
+
+	stationPoints.attr("transform", function(d) { 
+		return "translate("+ d.x +","+ d.y +")";
 		}
+	);
+	
+	stationAreas.attr("points", function(d) {
+		var polygon = "";
+		var first = true;
+		for(var i = 0; i < d.cell.length; i++) {
+			if(isNaN(d.cell[i][0]) || isNaN(d.cell[i][1])) return "";
+			
+			if(first) {
+				first = false;
+			} else {
+				polygon += " ";
+			}
+			
+			polygon += d.cell[i][0] + "," + d.cell[i][1];
+		}
+		return polygon;
 	});
 
 }
