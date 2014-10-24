@@ -144,6 +144,9 @@ function onMapUpdate() {
 	stationAreas.attr("points", function(d) {
 		var polygon = "";
 		var first = true;
+		if(typeof d.cell === 'undefined') {
+			return null;
+		}
 		for(var i = 0; i < d.cell.length; i++) {
 			if(isNaN(d.cell[i][0]) || isNaN(d.cell[i][1])) return "";
 			
