@@ -27,6 +27,12 @@ map.on("viewreset", onMapUpdate);
 d3.json("data?q=networks", function(networks) {
 	console.log("networks loaded");
 	
+	networks.sort(function(a,b) {
+			if(a.city.toUpperCase() > b.city.toUpperCase()) return 1;
+			else if(a.city.toUpperCase() < b.city.toUpperCase()) return -1;
+			else return 0;
+		});
+	
 	cityOptions = citySelector.selectAll("option")
 	  .data(networks)
 	  .enter()
