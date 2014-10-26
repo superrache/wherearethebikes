@@ -1,4 +1,6 @@
-var map = L.map('map').setView([20, 0], 2);
+var map = L.map('map', {zoomControl: false}).setView([20, 0], 2);
+map.addControl(L.control.zoom({position: 'topright'}));
+
 mapLink = 
     '<a href="http://openstreetmap.org">OpenStreetMap</a>';
 L.tileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -10,6 +12,10 @@ L.tileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 // Initialize the SVG layer
 map._initPathRoot();
 
+var colorScale = d3.scale.linear()
+	.range(["red", "yellow", "green"])
+	.domain([0, 0.5, 1]);
+
 	// svg selection
 var svg = d3.select("#map").select("svg"),
 	stationAreaGroup = svg.append("g"),
@@ -17,12 +23,21 @@ var svg = d3.select("#map").select("svg"),
 	stationAreas = [],
 	stationPoints = [],
 	currentStations = [],
+	city = "",
 	citySelector = d3.select("#cityselector").on("change", onCityChange),
-	cityOptions = [];
+	cityOptions = [],
+	methodSelector = d3.select("#methodselector").on("change", onMethodChange),
+	method = 0;
 
 var cityParam = getURLParameter("city");
 
 map.on("viewreset", onMapUpdate);
+
+var stationTooltip = d3.select("#station-tooltip"),
+	stationTooltipName = d3.select("#station-tooltip-name"),
+	stationTooltipBikeNumber = d3.select("#station-tooltip-bike-number"),
+	stationTooltipSlotNumber = d3.select("#station-tooltip-slot-number");
+
 
 d3.json("data?q=networks", function(networks) {
 	console.log("networks loaded");
@@ -56,58 +71,84 @@ function onCityChange() {
 	if(selectedIndex === "default") {
 		return;
 	}
-    var city = cityOptions[0][selectedIndex].__data__;
+    city = cityOptions[0][selectedIndex].__data__;
     
 	d3.json("data?q=" + city.tag, function(stations) {
 		console.log(city.name + " station data loaded");
+		currentStations = stations;
 		
-		stations.forEach(function(d) {
+		currentStations.forEach(function(d) {
 			d.LatLng = new L.LatLng(d.lat / 1000000, d.lng / 1000000);
 		});
 		
-		// clear the svg
-		stationPointGroup.selectAll("circle").remove();
-		stationAreaGroup.selectAll("polygon").remove();
-		
-		// create station circles
-		stationPoints = stationPointGroup.selectAll("circle")
-			.data(stations)
-			.enter().append("circle")
-			.style("stroke", "black")
-			.style("opacity", .6)
-			.style("fill", function(d) {
-				if(d.available_bikes) return "green";
-				else return "red";
-				})
-			.attr("r", 2);
-		
-		var colorScale = d3.scale.linear()
-								.range(["red", "yellow", "green"])
-								.domain([0, 0.5, 1]);
-		
-		// create station polygons
-		stationAreas = stationAreaGroup.selectAll("path")
-			.data(stations)
-			.enter().append("svg:polygon")
-			.attr("id", function(d) {
-					return "station-" + d.idx;
-				})
-			.attr("stroke-width", "0px")
-			.attr("fill-opacity", "0.5")
-			.attr("fill", function(d) {
-					var slots = d.bikes + d.free;
-					var bikeAvailability = d.bikes / slots;
-					var slotAvailability = d.free / slots;
-					return colorScale(bikeAvailability);
-				});
-		
-		// apply changes on the map
-		currentStations = stations;
-	    console.log("zooming on " + city.City);
-	    var cityLatLng = new L.LatLng(city.lat / 1000000, city.lng / 1000000);
-	    map.setView(cityLatLng, 12); // call onMapUpdate()
+		render();
 	});
+}
+		
+function onMethodChange() {
+	method = methodSelector.property('selectedIndex');
+    console.log("new method:" + method);
+    render();
+    onMapUpdate(); // la carte ne bouge pas, donc il faut forcer la mise à jour
+}
 
+function render() {
+	// clear the svg
+	stationPointGroup.selectAll("circle").remove();
+	stationAreaGroup.selectAll("polygon").remove();
+	
+	// create station circles
+	stationPoints = stationPointGroup.selectAll("circle")
+		.data(currentStations)
+		.enter().append("circle")
+		.style("stroke", "black")
+		.style("opacity", .6)
+		.style("fill", function(d) {
+			if(d.available_bikes) return "green";
+			else return "red";
+			})
+		.attr("r", 2);
+	
+	// create station polygons
+	stationAreas = stationAreaGroup.selectAll("path")
+		.data(currentStations)
+		.enter().append("svg:polygon")
+		.attr("id", function(d) {
+				return "station-" + d.idx;
+			})
+		.attr("stroke-width", "0px")
+		.attr("fill-opacity", "0.5")
+		.attr("fill", function(d) {
+				var slots = d.bikes + d.free;
+				var bikeAvailability = d.bikes / slots;
+				var slotAvailability = d.free / slots;
+				if(method === 0) {
+					return colorScale(bikeAvailability);
+				} else {
+					return colorScale(slotAvailability);
+				}
+			});
+	
+	stationAreas.on('mouseover', function(d) {
+				stationTooltip.transition()
+							.duration(200)
+							.style("opacity", .9);
+				stationTooltip.style("left", (d3.event.pageX) + "px")
+							.style("top", (d3.event.pageY - 28 + "px"));
+				stationTooltipName.html(d.name);
+				stationTooltipBikeNumber.html(d.bikes);
+				stationTooltipSlotNumber.html(d.free);
+			})
+		.on('mouseout', function(d) {
+				stationTooltip.transition()
+							.duration(500)
+							.style("opacity", 0);
+			});
+	
+	// apply changes on the map
+    console.log("zooming on " + city.city);
+    var cityLatLng = new L.LatLng(city.lat / 1000000, city.lng / 1000000);
+    map.setView(cityLatLng, 14); // call onMapUpdate()
 }
 
 function onMapUpdate() {

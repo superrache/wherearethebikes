@@ -22,10 +22,29 @@
 	 
 		<div id="map"></div>
 		
-		<div id="div_cityselector">
-	 		<select id="cityselector">
-	 			<option value="default">Choose a city</option>
-	 		</select>
+		<div id="left-panel">
+			<h1>wherearethebikes</h1>
+			With Wherearethebikes, visualize the current state of the complete bike sharing system of this city:
+			<div id="div_cityselector">
+		 		<select id="cityselector">
+		 			<option value="default">Choose a city</option>
+		 		</select>
+		 		<br/><br/>
+		 		Representation:
+		 		<select id="methodselector">
+		 			<option value="bike">Bike availability</option>
+		 			<option value="slot">Slot availability</option>
+		 		</select>
+		 	</div>
+		 </div>
+	 	
+	 	<div id="station-tooltip">
+	 		<span id="station-tooltip-name"></span>
+	 		<br/>
+	 		Bikes:
+	 		<span id="station-tooltip-bike-number"></span>
+	 		Slots:
+	 		<span id="station-tooltip-slot-number"></span>
 	 	</div>
 	 	
 		<script src="index.js"></script>
