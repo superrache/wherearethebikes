@@ -48,6 +48,7 @@ select {
   pointer-events: none;
   top:0px;
   left:0px;
+  opacity:0;
 }
 
 #station-tooltip-name {
