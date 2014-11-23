@@ -1,3 +1,5 @@
+d3.select("#map-loading").style("display", "block");
+
 var map = L.map('map', {zoomControl: false}).setView([20, 0], 2);
 map.addControl(L.control.zoom({position: 'topright'}));
 
@@ -8,7 +10,7 @@ L.tileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 	minZoom:1,
     maxZoom: 19
 }).addTo(map);
-				
+
 // Initialize the SVG layer
 map._initPathRoot();
 
@@ -23,13 +25,11 @@ var svg = d3.select("#map").select("svg"),
 	stationAreas = [],
 	stationPoints = [],
 	currentStations = [],
-	city = "",
-	citySelector = d3.select("#cityselector").on("change", onCityChange),
+	network,
+	citySelector = d3.select("#cityselector").on("change", onCitySelectChange),
 	cityOptions = [],
-	methodSelector = d3.select("#methodselector").on("change", onMethodChange),
+	methodSelector = d3.select("#methodselector").on("change", onMethodSelectChange),
 	method = 0;
-
-var cityParam = getURLParameter("city");
 
 map.on("viewreset", onMapUpdate);
 
@@ -38,9 +38,13 @@ var stationTooltip = d3.select("#station-tooltip"),
 	stationTooltipBikeNumber = d3.select("#station-tooltip-bike-number"),
 	stationTooltipSlotNumber = d3.select("#station-tooltip-slot-number");
 
+var networkParam = getURLParameter("network");
 
 d3.json("data?q=networks", function(networks) {
 	console.log("networks loaded");
+	d3.select("#cityselector").attr("disabled", null);
+	d3.select("#selector-loading").text("Choose a city");
+	d3.select("#map-loading").style("display", "none");
 	
 	networks.sort(function(a,b) {
 			if(a.city.toUpperCase() > b.city.toUpperCase()) return 1;
@@ -58,6 +62,18 @@ d3.json("data?q=networks", function(networks) {
 	  .text(function(d) {
 		  	return d.city;
 		  });
+	
+	if(networkParam != "null") {
+		d3.select("#map-loading").style("display", "block");
+		networks.forEach(function(d) {
+			if(d.tag === networkParam) {
+				network = d;
+				cityOptions.property("value", d); // TODO...
+				changeNetwork();
+				return;
+			}
+		});
+	}
 });
 
 function getURLParameter(name) {
@@ -66,30 +82,42 @@ function getURLParameter(name) {
     );
 }
 
-function onCityChange() {
+function setURLParameter(name, value) {
+	location.search = name + "=" + value;
+}
+
+function onCitySelectChange() {
 	var selectedIndex = citySelector.property('selectedIndex');
 	if(selectedIndex === "default") {
 		return;
 	}
-    city = cityOptions[0][selectedIndex].__data__;
-    
-	d3.json("data?q=" + city.tag, function(stations) {
-		console.log(city.name + " station data loaded");
-		currentStations = stations;
-		
-		currentStations.forEach(function(d) {
-			d.LatLng = new L.LatLng(d.lat / 1000000, d.lng / 1000000);
-		});
-		
-		render();
-	});
+    network = cityOptions[0][selectedIndex].__data__;
+    setURLParameter("network", network.tag);
+	changeNetwork();
 }
 		
-function onMethodChange() {
+function onMethodSelectChange() {
 	method = methodSelector.property('selectedIndex');
     console.log("new method:" + method);
     render();
     onMapUpdate(); // la carte ne bouge pas, donc il faut forcer la mise à jour
+}
+
+function changeNetwork() {
+	d3.json("data?q=" + network.tag, function(stations) {
+		console.log(network.name + " station data loaded");
+		d3.select("#map-loading").style("display", "none");
+		currentStations = stations;
+		
+		currentStations.forEach(function(d) {
+			d.LatLng = new L.LatLng(d.lat / 1000000, d.lng / 1000000);
+			d.slots = d.bikes + d.free;
+			d.bikeAvailability = d.bikes / d.slots;
+			d.slotAvailability = d.free / d.slots;
+		});
+		
+		render();
+	});
 }
 
 function render() {
@@ -102,12 +130,24 @@ function render() {
 		.data(currentStations)
 		.enter().append("circle")
 		.style("stroke", "black")
-		.style("opacity", .6)
+		.style("stroke-width", 1)
+		.style("opacity", .5)
 		.style("fill", function(d) {
-			if(d.available_bikes) return "green";
-			else return "red";
+				if(method === 0) {
+					if(d.bikeAvailability == 0) {
+						return "red";
+					} else {
+						return "green";
+					}
+				} else {
+					if(d.slotAvailability == 0) {
+						return "red";
+					} else {
+						return "green";
+					}
+				}
 			})
-		.attr("r", 2);
+		.attr("r", 3);
 	
 	// create station polygons
 	stationAreas = stationAreaGroup.selectAll("path")
@@ -119,13 +159,10 @@ function render() {
 		.attr("stroke-width", "0px")
 		.attr("fill-opacity", "0.5")
 		.attr("fill", function(d) {
-				var slots = d.bikes + d.free;
-				var bikeAvailability = d.bikes / slots;
-				var slotAvailability = d.free / slots;
 				if(method === 0) {
-					return colorScale(bikeAvailability);
+					return colorScale(d.bikeAvailability);
 				} else {
-					return colorScale(slotAvailability);
+					return colorScale(d.slotAvailability);
 				}
 			});
 	
@@ -146,9 +183,9 @@ function render() {
 			});
 	
 	// apply changes on the map
-    console.log("zooming on " + city.city);
-    var cityLatLng = new L.LatLng(city.lat / 1000000, city.lng / 1000000);
-    map.setView(cityLatLng, 14); // call onMapUpdate()
+    console.log("zooming on " + network.city);
+    var networkLatLng = new L.LatLng(network.lat / 1000000, network.lng / 1000000);
+    map.setView(networkLatLng, 14); // call onMapUpdate()
 }
 
 function onMapUpdate() {

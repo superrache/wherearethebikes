@@ -23,14 +23,16 @@
 		<div id="map"></div>
 		
 		<div id="left-panel">
-			<h1>wherearethebikes</h1>
-			With Wherearethebikes, visualize the current state of the complete bike sharing system of this city:
+			<h1>Where Are The Bikes?</h1>
+			This application allows you to check at a glance the current state of a complete bike sharing system in a map.
+			<br/>
+			Let's start by choosing a city:
 			<div id="div_cityselector">
-		 		<select id="cityselector">
-		 			<option value="default">Choose a city</option>
+		 		<select id="cityselector" disabled="disabled">
+		 			<option id="selector-loading" value="default">Loading...</option>
 		 		</select>
 		 		<br/><br/>
-		 		Representation:
+		 		And a representation:
 		 		<select id="methodselector">
 		 			<option value="bike">Bike availability</option>
 		 			<option value="slot">Slot availability</option>
@@ -46,6 +48,8 @@
 	 		Slots:
 	 		<span id="station-tooltip-slot-number"></span>
 	 	</div>
+	 	
+	 	<div id="map-loading">Loading...</div>
 	 	
 		<script src="index.js"></script>
 	</body>
