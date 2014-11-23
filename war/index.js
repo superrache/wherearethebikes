@@ -83,7 +83,8 @@ function getURLParameter(name) {
 }
 
 function setURLParameter(name, value) {
-	location.search = name + "=" + value;
+	var title = "Wherearethebikes? " + value;
+	window.history.pushState(title, title, "/?" + name + "=" + value);
 }
 
 function onCitySelectChange() {
