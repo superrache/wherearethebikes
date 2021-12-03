@@ -1,0 +1,32 @@
+{
+  "name": "wherearethebikes",
+  "version": "0.1.0",
+  "private": false,
+  "scripts": {
+    "serve": "vue-cli-service serve",
+    "build": "vue-cli-service build",
+    "lint": "vue-cli-service lint",
+    "express": "DATABASE_URL=postgres://postgres:postgres@localhost:5432/test vue-cli-service express:watch",
+    "express:run": "DATABASE_URL=postgres://postgres:postgres@localhost:5432/test vue-cli-service express:run",
+    "dev": "npm run express & npm run serve",
+    "start": "node server.js"
+  },
+  "keywords": [
+    "d3.js",
+    "leaflet",
+    "bike sharing system",
+    "bss"
+  ],
+  "author": "superrache",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/superrache/wherearethebikes/issues"
+  },
+  "homepage": "https://github.com/superrache/wherearethebikes",
+  "dependencies": {
+    "express": "^4.17.1",
+    "https": "^1.0.0",
+    "request": "^2.88.2",
+    "server-static": "^2.0.5"
+  }
+}

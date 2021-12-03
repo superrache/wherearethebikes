@@ -18,7 +18,7 @@ var colorScale = d3.scale.linear()
 	.range(["red", "yellow", "green"])
 	.domain([0, 0.5, 1]);
 
-	// svg selection
+// svg selection
 var svg = d3.select("#map").select("svg"),
 	stationAreaGroup = svg.append("g"),
 	stationPointGroup = svg.append("g"),
@@ -45,12 +45,19 @@ d3.json("data?q=networks", function(networks) {
 	d3.select("#cityselector").attr("disabled", null);
 	d3.select("#selector-loading").text("Choose a city");
 	d3.select("#map-loading").style("display", "none");
+
+	networks.networks.forEach(function(d) {
+		d.label = d.location.country + " " + d.location.city + " (" + d.name + ")"
+	})
 	
-	networks.sort(function(a,b) {
-			if(a.city.toUpperCase() > b.city.toUpperCase()) return 1;
-			else if(a.city.toUpperCase() < b.city.toUpperCase()) return -1;
-			else return 0;
-		});
+	function sortByCity(array, key) {
+		return array.sort(function(a, b) {
+			var x = a[key]; var y = b[key]
+			return ((x < y) ? -1 : ((x > y) ? 1 : 0))
+		})
+	}
+			
+	networks = sortByCity(networks.networks, "label")
 	
 	cityOptions = citySelector.selectAll("option")
 	  .data(networks)
@@ -60,13 +67,13 @@ d3.json("data?q=networks", function(networks) {
 		  	return "option-" + d.id;
 		  })
 	  .text(function(d) {
-		  	return d.city;
+		  	return d.label;
 		  });
 	
 	if(networkParam != "null") {
 		d3.select("#map-loading").style("display", "block");
 		networks.forEach(function(d) {
-			if(d.tag === networkParam) {
+			if(d.id === networkParam) {
 				network = d;
 				cityOptions.property("value", d); // TODO...
 				changeNetwork();
@@ -93,7 +100,7 @@ function onCitySelectChange() {
 		return;
 	}
     network = cityOptions[0][selectedIndex].__data__;
-    setURLParameter("network", network.tag);
+    setURLParameter("network", network.id);
 	changeNetwork();
 }
 		
@@ -105,16 +112,16 @@ function onMethodSelectChange() {
 }
 
 function changeNetwork() {
-	d3.json("data?q=" + network.tag, function(stations) {
-		console.log(network.name + " station data loaded");
+	d3.json("data?q=" + network.id, function(res) {
+		console.log(res.network.name + " station data loaded");
 		d3.select("#map-loading").style("display", "none");
-		currentStations = stations;
+		currentStations = res.network.stations;
 		
 		currentStations.forEach(function(d) {
-			d.LatLng = new L.LatLng(d.lat / 1000000, d.lng / 1000000);
-			d.slots = d.bikes + d.free;
-			d.bikeAvailability = d.bikes / d.slots;
-			d.slotAvailability = d.free / d.slots;
+			d.LatLng = new L.LatLng(d.latitude, d.longitude);
+			d.slots = d.free_bikes + d.empty_slots;
+			d.bikeAvailability = d.free_bikes / d.slots;
+			d.slotAvailability = d.empty_slots / d.slots;
 		});
 		
 		render();
@@ -155,7 +162,7 @@ function render() {
 		.data(currentStations)
 		.enter().append("svg:polygon")
 		.attr("id", function(d) {
-				return "station-" + d.idx;
+				return "station-" + d.id;
 			})
 		.attr("stroke-width", "0px")
 		.attr("fill-opacity", "0.5")
@@ -168,36 +175,36 @@ function render() {
 			});
 	
 	stationAreas.on('mouseover', function(d) {
-				stationTooltip.transition()
-							.duration(200)
-							.style("opacity", .9);
-				stationTooltip.style("left", (d3.event.pageX) + "px")
-							.style("top", (d3.event.pageY - 28 + "px"));
-				stationTooltipName.html(d.name);
-				stationTooltipBikeNumber.html(d.bikes);
-				stationTooltipSlotNumber.html(d.free);
-			})
+			stationTooltip.transition()
+						.duration(200)
+						.style("opacity", .9);
+			stationTooltip.style("left", (d3.event.pageX) + "px")
+						.style("top", (d3.event.pageY - 28 + "px"));
+			stationTooltipName.html(d.name);
+			stationTooltipBikeNumber.html(d.free_bikes);
+			stationTooltipSlotNumber.html(d.empty_slots);
+		})
 		.on('mouseout', function(d) {
-				stationTooltip.transition()
-							.duration(500)
-							.style("opacity", 0);
-			});
+			stationTooltip.transition()
+						.duration(500)
+						.style("opacity", 0);
+		});
 	
 	// apply changes on the map
     console.log("zooming on " + network.city);
-    var networkLatLng = new L.LatLng(network.lat / 1000000, network.lng / 1000000);
+    var networkLatLng = new L.LatLng(network.location.latitude, network.location.longitude);
     map.setView(networkLatLng, 14); // call onMapUpdate()
 }
 
 function onMapUpdate() {
-	console.log("onMapUpdate");
+	console.log("onMapUpdate")
 	
 	// Data reprojection
-	currentStations.forEach(function(d, i) {
-			var stationPoint = map.latLngToLayerPoint(d.LatLng);
-			d.x = stationPoint.x;
-			d.y = stationPoint.y;
-		});
+	currentStations.forEach(function(d) {
+		var stationPoint = map.latLngToLayerPoint(d.LatLng)
+		d.x = stationPoint.x;
+		d.y = stationPoint.y;
+	});
 	
 	//var pixelBounds = map.getPixelBounds();
 	
