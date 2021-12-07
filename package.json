@@ -2,6 +2,9 @@
   "name": "wherearethebikes",
   "version": "0.1.0",
   "private": false,
+  "engines": {
+    "node": "14.x"
+  },
   "scripts": {
     "start": "node server.js"
   },
