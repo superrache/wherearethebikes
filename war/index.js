@@ -11,6 +11,8 @@ L.tileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 19
 }).addTo(map);
 
+fetch('https://dept-quiz.herokuapp.com/stat?feature=wherearethebikes')
+
 // Initialize the SVG layer
 map._initPathRoot();
 
@@ -113,7 +115,10 @@ function onMethodSelectChange() {
 
 function changeNetwork() {
 	d3.json("data?q=" + network.id, function(res) {
-		console.log(res.network.name + " station data loaded");
+		console.log(res.network.name + " station data loaded")
+
+		fetch('https://dept-quiz.herokuapp.com/stat?feature=wherearethebikes-' + network.id)
+
 		d3.select("#map-loading").style("display", "none");
 		currentStations = res.network.stations;
 		
