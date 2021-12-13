@@ -1,11 +1,10 @@
 const express = require('express')
-const serveStatic = require('serve-static')
 const request = require('request')
 
 const app = express()
 
-app.use(serveStatic(__dirname + "/war"))
-var port = process.env.PORT || 3001
+app.use(express.static(__dirname + "/src"))
+var port = process.env.PORT || 8080
 
 app.listen(port)
 console.log('listening port ' + port)
@@ -29,7 +28,4 @@ app.get('/data', (req, res) => {
             res.json(body)
         }
     })
-
-    
-    
 })

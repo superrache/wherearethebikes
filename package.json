@@ -24,7 +24,6 @@
   "dependencies": {
     "express": "^4.17.1",
     "https": "^1.0.0",
-    "request": "^2.88.2",
-    "server-static": "^2.0.5"
+    "request": "^2.88.2"
   }
 }
