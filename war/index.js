@@ -28,6 +28,7 @@ var svg = d3.select("#map").select("svg"),
 	stationPoints = [],
 	currentStations = [],
 	network,
+	networks,
 	citySelector = d3.select("#cityselector").on("change", onCitySelectChange),
 	cityOptions = [],
 	methodSelector = d3.select("#methodselector").on("change", onMethodSelectChange),
@@ -44,13 +45,13 @@ var stationTooltip = d3.select("#station-tooltip"),
 var networkParam = getURLParameter("network"),
 	methodParam = getURLParameter('method')
 
-d3.json("data?q=networks", function(networks) {
+d3.json("data?q=networks", function(ns) {
 	console.log("networks loaded");
 	d3.select("#cityselector").attr("disabled", null);
 	d3.select("#selector-loading").text("Choose a city");
 	d3.select("#map-loading").style("display", "none");
 
-	networks.networks.forEach(function(d) {
+	ns.networks.forEach(function(d) {
 		d.label = d.location.country + " " + d.location.city + " (" + d.name + ")"
 	})
 	
@@ -60,8 +61,8 @@ d3.json("data?q=networks", function(networks) {
 			return ((x < y) ? -1 : ((x > y) ? 1 : 0))
 		})
 	}
-			
-	networks = sortByCity(networks.networks, "label")
+	
+	networks = sortByCity(ns.networks, "label")
 	
 	cityOptions = citySelector.selectAll("option")
 	  .data(networks)
@@ -75,18 +76,30 @@ d3.json("data?q=networks", function(networks) {
 		  });
 	
 	if(networkParam != "null") {
-		d3.select("#map-loading").style("display", "block");
-		networks.forEach(function(d) {
-			if(d.id === networkParam) {
-				network = d;
-				cityOptions.property("value", d); // TODO...
-				changeNetwork();
-				return;
-			}
-		});
+		applyNetworkParam()
 	}
+})
 
-});
+addEventListener('popstate', function(e) {
+	networkParam = getURLParameter("network")
+	methodParam = getURLParameter('method')
+	console.log('popstate: network=' + networkParam + " method=" + methodParam)
+	if(networkParam !== network) {
+		applyNetworkParam()
+	}
+})
+
+function applyNetworkParam() {
+	d3.select("#map-loading").style("display", "block");
+	networks.forEach(function(d) {
+		if(d.id === networkParam) {
+			network = d;
+			cityOptions.property("value", d); // TODO...
+			changeNetwork();
+			return;
+		}
+	})
+}
 
 function getURLParameter(name) {
     return decodeURI(
