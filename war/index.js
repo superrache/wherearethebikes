@@ -38,7 +38,8 @@ map.on("viewreset", onMapUpdate);
 var stationTooltip = d3.select("#station-tooltip"),
 	stationTooltipName = d3.select("#station-tooltip-name"),
 	stationTooltipBikeNumber = d3.select("#station-tooltip-bike-number"),
-	stationTooltipSlotNumber = d3.select("#station-tooltip-slot-number");
+	stationTooltipSlotNumber = d3.select("#station-tooltip-slot-number"),
+	stationTooltipBonus = d3.select("#station-tooltip-bonus")
 
 var networkParam = getURLParameter("network");
 
@@ -129,6 +130,9 @@ function changeNetwork() {
 			d.slots = d.free_bikes + d.empty_slots;
 			d.bikeAvailability = d.free_bikes / d.slots;
 			d.slotAvailability = d.empty_slots / d.slots;
+			d.opening = (d.extra.status.toLowerCase().startsWith('o') ? 1 : 0) // "Operative" pour velib', "OPEN" pour bicloo ou velov
+			d.bonus = d.extra.bonus ? 1 : 0
+			d.banking = d.extra.banking ? 1 : 0
 		});
 		
 		render();
@@ -149,17 +153,20 @@ function render() {
 		.style("opacity", .5)
 		.style("fill", function(d) {
 				if(method === 0) {
-					if(d.bikeAvailability == 0) {
-						return "red";
-					} else {
-						return "green";
-					}
-				} else {
-					if(d.slotAvailability == 0) {
-						return "red";
-					} else {
-						return "green";
-					}
+					if(d.bikeAvailability == 0) return "red"
+					else return "green"
+				} else if(method === 1) {
+					if(d.slotAvailability == 0) return "red"
+					else return "green"
+				} else if(method === 2) {
+					if(d.extra.status.toLowerCase().startsWith('o')) return "green"
+					else return "red"
+				} else if(method === 3) {
+					if(d.extra.bonus) return "green"
+					else return "red"
+				} else if(method === 4) {
+					if(d.extra.banking) return "green"
+					else return "red"
 				}
 			})
 		.attr("r", 3);
@@ -175,9 +182,15 @@ function render() {
 		.attr("fill-opacity", "0.5")
 		.attr("fill", function(d) {
 				if(method === 0) {
-					return colorScale(d.bikeAvailability);
-				} else {
-					return colorScale(d.slotAvailability);
+					return colorScale(d.bikeAvailability)
+				} else if(method === 1) {
+					return colorScale(d.slotAvailability)
+				} else if(method === 2) {
+					return colorScale(d.opening)
+				} else if(method === 3) {
+					return colorScale(d.bonus)
+				} else if(method === 4) {
+					return colorScale(d.banking)
 				}
 			});
 	
@@ -190,6 +203,7 @@ function render() {
 			stationTooltipName.html(d.name);
 			stationTooltipBikeNumber.html(d.free_bikes);
 			stationTooltipSlotNumber.html(d.empty_slots);
+			stationTooltipBonus.html(d.extra.bonus ? "(bonus)" : "")
 		})
 		.on('mouseout', function(d) {
 			stationTooltip.transition()
