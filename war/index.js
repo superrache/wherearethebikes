@@ -41,7 +41,8 @@ var stationTooltip = d3.select("#station-tooltip"),
 	stationTooltipSlotNumber = d3.select("#station-tooltip-slot-number"),
 	stationTooltipBonus = d3.select("#station-tooltip-bonus")
 
-var networkParam = getURLParameter("network");
+var networkParam = getURLParameter("network"),
+	methodParam = getURLParameter('method')
 
 d3.json("data?q=networks", function(networks) {
 	console.log("networks loaded");
@@ -84,34 +85,38 @@ d3.json("data?q=networks", function(networks) {
 			}
 		});
 	}
+
 });
 
 function getURLParameter(name) {
     return decodeURI(
         (RegExp(name + '=' + '(.+?)(&|$)').exec(location.search)||[,null])[1]
-    );
+    )
 }
 
-function setURLParameter(name, value) {
-	var title = "Wherearethebikes? " + value;
-	window.history.pushState(title, title, "/?" + name + "=" + value);
+function updateURL() {
+	if(network !== null || network !== undefined) {
+		var title = "Wherearethebikes"
+		window.history.pushState(title, title, "/?network=" + network.id + "&method=" + method)
+	}
 }
 
 function onCitySelectChange() {
-	var selectedIndex = citySelector.property('selectedIndex');
+	var selectedIndex = citySelector.property('selectedIndex')
 	if(selectedIndex === "default") {
-		return;
+		return
 	}
-    network = cityOptions[0][selectedIndex].__data__;
-    setURLParameter("network", network.id);
-	changeNetwork();
+    network = cityOptions[0][selectedIndex].__data__
+	updateURL()
+	changeNetwork()
 }
 		
 function onMethodSelectChange() {
-	method = methodSelector.property('selectedIndex');
-    console.log("new method:" + method);
-    render();
-    onMapUpdate(); // la carte ne bouge pas, donc il faut forcer la mise à jour
+	method = methodSelector.property('selectedIndex')
+	console.log("new method selected:" + method)
+	updateURL()
+    render()
+    onMapUpdate() // la carte ne bouge pas, donc il faut forcer la mise à jour
 }
 
 function changeNetwork() {
@@ -130,16 +135,37 @@ function changeNetwork() {
 			d.slots = d.free_bikes + d.empty_slots;
 			d.bikeAvailability = d.free_bikes / d.slots;
 			d.slotAvailability = d.empty_slots / d.slots;
-			d.opening = (d.extra.status.toLowerCase().startsWith('o') ? 1 : 0) // "Operative" pour velib', "OPEN" pour bicloo ou velov
-			d.bonus = d.extra.bonus ? 1 : 0
-			d.banking = d.extra.banking ? 1 : 0
+			d.opening = isOpened(d)  ? 1 : 0
+			d.bonus = isBonus(d) ? 1 : 0
+			d.banking = isBanking(d) ? 1 : 0
 		});
 		
-		render();
+		if(methodParam != "null") {
+			method = parseInt(methodParam)
+			console.log('read method url param: ' + method)
+			d3.select('#methodSelector')[0][0].selectedIndex = method
+		}
+
+		render()
+		onMapUpdate()
 	});
 }
 
+function isOpened(d) {
+	return d.extra.hasOwnProperty('status') && d.extra.status.toLowerCase().startsWith('o') // "Operative" pour velib', "OPEN" pour bicloo ou velov
+}
+
+function isBonus(d) {
+	return d.extra.hasOwnProperty('bonus') && d.extra.bonus
+}
+
+function isBanking(d) {
+	return d.extra.hasOwnProperty('banking') && d.extra.banking
+}
+
 function render() {
+	console.log('render')
+
 	// clear the svg
 	stationPointGroup.selectAll("circle").remove();
 	stationAreaGroup.selectAll("polygon").remove();
@@ -159,13 +185,13 @@ function render() {
 					if(d.slotAvailability == 0) return "red"
 					else return "green"
 				} else if(method === 2) {
-					if(d.extra.status.toLowerCase().startsWith('o')) return "green"
+					if(isOpened(d)) return "green"
 					else return "red"
 				} else if(method === 3) {
-					if(d.extra.bonus) return "green"
+					if(isBonus(d)) return "green"
 					else return "red"
 				} else if(method === 4) {
-					if(d.extra.banking) return "green"
+					if(isBanking(d)) return "green"
 					else return "red"
 				}
 			})
@@ -212,7 +238,7 @@ function render() {
 		});
 	
 	// apply changes on the map
-    console.log("zooming on " + network.city);
+    console.log("zooming on " + network.location.city);
     var networkLatLng = new L.LatLng(network.location.latitude, network.location.longitude);
     map.setView(networkLatLng, 14); // call onMapUpdate()
 }
