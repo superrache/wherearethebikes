@@ -117,8 +117,10 @@ function changeNetwork() {
 	d3.json("data?q=" + network.id, function(res) {
 		console.log(res.network.name + " station data loaded")
 
-		fetch('https://dept-quiz.herokuapp.com/stat?feature=wherearethebikes-' + network.id)
-
+		if(window.location.origin.indexOf('herokuapp.com') > 0) {
+			fetch('https://dept-quiz.herokuapp.com/stat?feature=wherearethebikes-' + network.id)
+		}
+		
 		d3.select("#map-loading").style("display", "none");
 		currentStations = res.network.stations;
 		
