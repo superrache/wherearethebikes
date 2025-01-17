@@ -1,5 +1,4 @@
 const express = require('express')
-const request = require('request')
 
 const app = express()
 
@@ -9,7 +8,7 @@ var port = process.env.PORT || 8080
 app.listen(port)
 console.log('listening port ' + port)
 
-app.get('/data', (req, res) => {
+app.get('/data', async (req, res) => {
     console.log('get /data q=' + req.query.q)
 
     let apiURL = 'http://api.citybik.es/v2/networks'
@@ -19,13 +18,11 @@ app.get('/data', (req, res) => {
 
     console.log(apiURL)
 
-    request(apiURL, { json: true }, (err, res2, body) => {
-        if (err) {
-            console.log(err)
-            res.json({error: 0})
-        } else {
-            //console.log(body)
-            res.json(body)
-        }
-    })
+    const response = await fetch(apiURL)
+    if (!response.ok) {
+        console.error('an error occured', response.status)
+    } else {
+        const data = await response.json()
+        res.json(data)
+    }
 })

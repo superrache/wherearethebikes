@@ -3,8 +3,8 @@
   "version": "0.1.0",
   "private": false,
   "engines": {
-    "node": "14.x",
-    "npm": "8.1.x"
+    "node": "22.x",
+    "npm": "10.9.x"
   },
   "scripts": {
     "start": "node server.js"
@@ -22,7 +22,6 @@
   },
   "homepage": "https://github.com/superrache/wherearethebikes",
   "dependencies": {
-    "express": "^4.17.1",
-    "request": "^2.88.2"
+    "express": "^4.21.2"
   }
 }
