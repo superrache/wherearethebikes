@@ -3,6 +3,8 @@ const express = require('express')
 const app = express()
 
 app.use(express.static(__dirname + "/src"))
+app.use('/vendor/maplibre-gl', express.static(__dirname + '/node_modules/maplibre-gl/dist'))
+app.use('/vendor/d3', express.static(__dirname + '/node_modules/d3/dist'))
 var port = process.env.PORT || 8080
 
 app.listen(port)
