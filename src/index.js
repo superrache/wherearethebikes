@@ -91,8 +91,6 @@ var mapReady = new Promise(function (resolve) {
   });
 });
 
-fetch("https://dept-quiz.herokuapp.com/stat?feature=wherearethebikes");
-
 var currentStations = [],
   network,
   networks = [],
@@ -215,13 +213,6 @@ function changeNetwork() {
   ]).then(function (results) {
     var res = results[0];
     console.log(res.network.name + " station data loaded");
-
-    if (window.location.origin.indexOf("herokuapp.com") > 0) {
-      fetch(
-        "https://dept-quiz.herokuapp.com/stat?feature=wherearethebikes-" +
-          network.id,
-      );
-    }
 
     mapLoading.style("display", "none");
     currentStations = res.network.stations;
