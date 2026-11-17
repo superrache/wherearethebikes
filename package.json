@@ -7,11 +7,11 @@
     "npm": "11.x"
   },
   "scripts": {
-    "start": "node server.js"
+    "start": "npx --yes http-server src -p 8080 -c-1"
   },
   "keywords": [
     "d3.js",
-    "leaflet",
+    "maplibre",
     "bike sharing system",
     "bss"
   ],
@@ -20,10 +20,5 @@
   "bugs": {
     "url": "https://github.com/superrache/wherearethebikes/issues"
   },
-  "homepage": "https://github.com/superrache/wherearethebikes",
-  "dependencies": {
-    "d3": "7.9.0",
-    "express": "^4.21.2",
-    "maplibre-gl": "6.16.0"
-  }
+  "homepage": "https://github.com/superrache/wherearethebikes"
 }

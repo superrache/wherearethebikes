@@ -2,9 +2,12 @@ import {
   Map,
   NavigationControl,
   MercatorCoordinate,
-} from "/vendor/maplibre-gl/maplibre-gl.mjs";
+} from "https://cdn.jsdelivr.net/npm/maplibre-gl@6.16.0/dist/maplibre-gl.mjs";
 
 // d3 v7 is loaded as a global by index.html
+
+// CityBikes sends `Access-Control-Allow-Origin: *`, so it is called directly.
+var CITYBIKES_API = "https://api.citybik.es/v2/networks";
 
 var METHODS = [
   function (d) {
@@ -108,7 +111,7 @@ var stationTooltip = d3.select("#station-tooltip"),
 var networkParam = getURLParameter("network"),
   methodParam = getURLParameter("method");
 
-d3.json("data?q=networks").then(function (ns) {
+d3.json(CITYBIKES_API).then(function (ns) {
   console.log("networks loaded");
   citySelector.attr("disabled", null);
   d3.select("#selector-loading").text("Choose a city");
@@ -207,7 +210,7 @@ function onMethodSelectChange() {
 function changeNetwork() {
   mapLoading.style("display", "block");
   Promise.all([
-    d3.json("data?q=" + encodeURIComponent(network.id)),
+    d3.json(CITYBIKES_API + "/" + encodeURIComponent(network.id)),
     mapReady,
   ]).then(function (results) {
     var res = results[0];
